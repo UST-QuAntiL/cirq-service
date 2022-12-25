@@ -17,6 +17,7 @@
 #  limitations under the License.
 # ******************************************************************************
 import cirq
+from flask_smorest import Blueprint
 
 from app import app, cirq_handler, implementation_handler, db, parameters
 from app.result_model import Result
@@ -26,22 +27,44 @@ import json
 import base64
 from cirq import Circuit
 import traceback
+from app.request_schemas import TranspilationRequestSchema, TranspilationRequest, ExecutionRequestSchema, \
+    ExecutionRequest, ResultRequestSchema, ResultRequest
+from app.response_schemas import TranspilationResponseSchema, TranspilationResponse, ExecutionResponseSchema, \
+    ExecutionResponse, ResultResponseSchema, ResultResponse
+
+blp = Blueprint(
+    "routes",
+    __name__,
+    url_prefix="/cirq-service/api/v1.0/",
+    description="All Cirq-Service endpoints",
+)
 
 
-@app.route('/cirq-service/api/v1.0/transpile', methods=['POST'])
-def transpile_circuit():
+@blp.route("/transpile", methods=["POST"])
+@blp.arguments(
+    TranspilationRequestSchema,
+    example={
+        "impl_url": "https://raw.githubusercontent.com/UST-QuAntiL/cirq-service/main/Sample%20Implementations/ciruit_json.json",
+        "impl_language": "Cirq-JSON",
+        "qpu_name": "Sycamore"
+    }
+)
+@blp.response(200, TranspilationResponseSchema)
+def transpile_circuit(json: TranspilationRequest):
     """Get implementation from URL. Pass input into implementation. Generate and transpile circuit
     and return depth and width."""
 
-    if not request.json or not 'qpu-name' in request.json:
+    if not json:
         abort(400)
 
-    qpu_name = request.json['qpu-name']
-    impl_language = request.json.get('impl-language', '')
-    input_params = request.json.get('input-params', "")
-    impl_url = request.json.get('impl-url', "")
-    bearer_token = request.json.get("bearer-token", "")
-    input_params = parameters.ParameterDictionary(input_params)
+    qpu_name = json.get('qpu_name')
+    impl_language = json.get('impl_language', '')
+    input_params = json.get('input_params', "")
+    impl_url = json.get('impl_url', "")
+    bearer_token = json.get("bearer_token", "")
+    app.logger.info("The input params are:" + str(input_params))
+    if input_params != "":
+        input_params = parameters.ParameterDictionary(input_params)
     # adapt if real backends are available
     token = ''
     # if 'token' in input_params:
@@ -52,7 +75,7 @@ def transpile_circuit():
     #     abort(400)
 
     if impl_url is not None and impl_url != "":
-        impl_url = request.json['impl-url']
+        impl_url = json.get('impl_url')
         if impl_language.lower() == 'cirq-json':
             short_impl_name = 'no name'
             circuit = implementation_handler.prepare_code_from_cirq_url(impl_url, bearer_token)
@@ -63,8 +86,8 @@ def transpile_circuit():
             except ValueError:
                 abort(400)
 
-    elif 'impl-data' in request.json:
-        impl_data = base64.b64decode(request.json.get('impl-data').encode()).decode()
+    elif 'impl-data' in json:
+        impl_data = base64.b64decode(json.get('impl_data').encode()).decode()
 
         short_impl_name = 'no short name'
         if impl_language.lower() == 'cirq-json':
@@ -125,29 +148,34 @@ def transpile_circuit():
                     f"number of measurement operations={number_of_measurement_operations}, "
                     f"multi qubit gate depth={multi_qubit_gate_depth}")
 
-    return jsonify({'depth': depth,
-                    'multi-qubit-gate-depth': multi_qubit_gate_depth,
-                    'width': width,
-                    'total-number-of-operations': total_number_of_operations,
-                    'number-of-single-qubit-gates': number_of_single_qubit_gates,
-                    'number-of-multi-qubit-gates': number_of_multi_qubit_gates,
-                    'number-of-measurement-operations': number_of_measurement_operations,
-                    'transpiled-cirq-json': cirq.to_json(transpiled_circuit, indent = 4)}), 200
+    return TranspilationResponse(depth, multi_qubit_gate_depth, width, total_number_of_operations,
+                                 number_of_single_qubit_gates, number_of_multi_qubit_gates,
+                                 number_of_measurement_operations, cirq.to_json(transpiled_circuit, indent=4))
 
 
-@app.route('/cirq-service/api/v1.0/execute', methods=['POST'])
-def execute_circuit():
+@blp.route("/execute", methods=["POST"])
+@blp.arguments(
+    ExecutionRequestSchema,
+    example={
+        "impl_url": "https://raw.githubusercontent.com/UST-QuAntiL/cirq-service/main/Sample%20Implementations/ciruit_json.json",
+        "impl_language": "Cirq-JSON",
+        "qpu_name": "Sycamore"
+    }
+)
+@blp.response(202, ExecutionResponseSchema)
+def execute_circuit(json: ExecutionRequest):
     """Put execution job in queue. Return location of the later result."""
-    if not request.json or not 'qpu-name' in request.json:
+    if not json:
         abort(400)
-    qpu_name = request.json['qpu-name']
-    impl_language = request.json.get('impl-language', '')
-    impl_url = request.json.get('impl-url')
-    bearer_token = request.json.get("bearer-token", "")
-    impl_data = request.json.get('impl-data')
-    transpiled_cirq_json = request.json.get('transpiled-cirq-json', "")
-    input_params = request.json.get('input-params', "")
-    input_params = parameters.ParameterDictionary(input_params)
+    qpu_name = json.get('qpu_name')
+    impl_language = json.get('impl_language', '')
+    impl_url = json.get('impl_url')
+    bearer_token = json.get("bearer_token", "")
+    impl_data = json.get('impl_data')
+    transpiled_cirq_json = json.get('transpiled_cirq_json', "")
+    input_params = json.get('input_params', "")
+    if input_params != "":
+        input_params = parameters.ParameterDictionary(input_params)
     shots = request.json.get('shots', 1024)
     if 'token' in input_params:
         token = input_params['token']
@@ -157,7 +185,8 @@ def execute_circuit():
         token = ""
 
     job = app.execute_queue.enqueue('app.tasks.execute', impl_url=impl_url, impl_data=impl_data,
-                                    impl_language=impl_language, transpiled_cirq_json=transpiled_cirq_json, qpu_name=qpu_name,
+                                    impl_language=impl_language, transpiled_cirq_json=transpiled_cirq_json,
+                                    qpu_name=qpu_name,
                                     token=token, input_params=input_params, shots=shots, bearer_token=bearer_token)
     result = Result(id=job.get_id(), backend=qpu_name, shots=shots)
     db.session.add(result)
@@ -165,9 +194,9 @@ def execute_circuit():
 
     logging.info('Returning HTTP response to client...')
     content_location = '/cirq-service/api/v1.0/results/' + result.id
-    response = jsonify({'Location': content_location})
+    response = ExecutionResponse(content_location)
     response.status_code = 202
-    response.headers['Location'] = content_location
+    response.headers.set("Location", content_location)
     return response
 
 
@@ -177,20 +206,21 @@ def calculate_calibration_matrix():
     pass
 
 
-@app.route('/cirq-service/api/v1.0/results/<result_id>', methods=['GET'])
+@blp.route("/results/<string:result_id>", methods=["GET"])
+@blp.response(200, ResultResponseSchema)
 def get_result(result_id):
     """Return result when it is available."""
-    result = Result.query.get(result_id)
+    result = Result.query.get(str(result_id).strip())
     if result.complete:
         result_histogram = json.loads(result.result)
-        return jsonify({'id': result.id, 'complete': result.complete, 'result': result_histogram,
-                        'backend': result.backend, 'shots': result.shots}), 200
+        response = ResultResponse(result.id, result.complete, result_histogram, result.backend, result.shots)
     else:
-        return jsonify({'id': result.id, 'complete': result.complete}), 200
+        response = ResultResponse(result.id, result.complete)
+    return response
 
 
-@app.route('/cirq-service/api/v1.0/version', methods=['GET'])
+@blp.route("/version", methods=["GET"])
+@blp.response(200)
 def version():
+    """Return current version number."""
     return jsonify({'version': '1.0'})
-
-

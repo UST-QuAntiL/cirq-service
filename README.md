@@ -50,6 +50,17 @@ Inputs are currently also not supported.
 }
 ```
 
+#### Transpilation via url
+```
+{  
+    "impl-url": "BASE64-ENCODED-IMPLEMENTATION",
+    "impl-language": "Cirq",
+    "qpu-name": "NAME-OF-QPU",
+    "input-params": {
+    }
+}
+```
+
 ## Execution Request
 Send implementation, input, and QPU information to the API to execute your circuit and get the result.
 *Note*: Currently, the Cirq package is used for local simulation. Thus, no real backends are accessible.
