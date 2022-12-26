@@ -30,23 +30,23 @@ class ResultRequest:
         self.result_id = result_id
 
 class TranspilationRequestSchema(ma.Schema):
-    qpu_name = ma.fields.String()
-    impl_language = ma.fields.String()
-    impl_url = ma.fields.String()
-    impl_data = ma.fields.String()
-    bearer_token = ma.fields.String()
-    input_params = ma.fields.Mapping()
+    qpu_name = ma.fields.String(data_key="qpu-name")
+    impl_language = ma.fields.String(data_key="impl-language")
+    impl_url = ma.fields.String(data_key="impl-url")
+    impl_data = ma.fields.String(data_key="impl-data")
+    bearer_token = ma.fields.String(data_key="bearer-token")
+    input_params = ma.fields.Mapping(data_key="input-params")
 
 
 class ExecutionRequestSchema(ma.Schema):
-    qpu_name = ma.fields.String()
-    impl_language = ma.fields.String()
-    impl_url = ma.fields.String()
-    impl_data = ma.fields.String()
-    transpiled_cirq_json = ma.fields.String()
-    bearer_token = ma.fields.String()
+    qpu_name = ma.fields.String(data_key="qpu-name")
+    impl_language = ma.fields.String(data_key="impl-language")
+    impl_url = ma.fields.String(data_key="impl-url")
+    impl_data = ma.fields.String(data_key="impl-data")
+    transpiled_cirq_json = ma.fields.String(data_key="transpiled-cirq-json")
+    bearer_token = ma.fields.String(data_key="bearer-token")
     shots = ma.fields.Integer()
-    input_params = ma.fields.Mapping()
+    input_params = ma.fields.Mapping(data_key="input-params")
 
 
 class ResultRequestSchema(ma.Schema):

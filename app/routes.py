@@ -44,9 +44,9 @@ blp = Blueprint(
 @blp.arguments(
     TranspilationRequestSchema,
     example={
-        "impl_url": "https://raw.githubusercontent.com/UST-QuAntiL/cirq-service/main/Sample%20Implementations/ciruit_json.json",
-        "impl_language": "Cirq-JSON",
-        "qpu_name": "Sycamore"
+        "impl-url": "https://raw.githubusercontent.com/UST-QuAntiL/cirq-service/main/Sample%20Implementations/ciruit_json.json",
+        "impl-language": "Cirq-JSON",
+        "qpu-name": "Sycamore"
     }
 )
 @blp.response(200, TranspilationResponseSchema)
@@ -157,9 +157,9 @@ def transpile_circuit(json: TranspilationRequest):
 @blp.arguments(
     ExecutionRequestSchema,
     example={
-        "impl_url": "https://raw.githubusercontent.com/UST-QuAntiL/cirq-service/main/Sample%20Implementations/ciruit_json.json",
-        "impl_language": "Cirq-JSON",
-        "qpu_name": "Sycamore"
+        "impl-url": "https://raw.githubusercontent.com/UST-QuAntiL/cirq-service/main/Sample%20Implementations/ciruit_json.json",
+        "impl-language": "Cirq-JSON",
+        "qpu-name": "Sycamore"
     }
 )
 @blp.response(202, ExecutionResponseSchema)
@@ -203,7 +203,7 @@ def execute_circuit(json: ExecutionRequest):
 @app.route('/cirq-service/api/v1.0/calculate-calibration-matrix', methods=['POST'])
 def calculate_calibration_matrix():
     """Put calibration matrix calculation job in queue. Return location of the later result."""
-    pass
+    abort(404)
 
 
 @blp.route("/results/<string:result_id>", methods=["GET"])
