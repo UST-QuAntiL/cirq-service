@@ -18,6 +18,7 @@
 # ******************************************************************************
 from time import sleep
 
+import cirq
 from cirq import Simulator
 from cirq import Result
 from cirq.contrib.routing import gridqubits_to_graph_device
@@ -30,28 +31,31 @@ def get_qpu_spec(qpu):
         return cirq_google.Sycamore
     elif qpu.lower() == "sycamore23":
         return cirq_google.Sycamore23
-    elif qpu.lower() == "foxtail":
-        return cirq_google.Foxtail
-    elif qpu.lower() == "bristlecone":
-        return cirq_google.Bristlecone
     else:
         raise NotImplementedError("qpu not supported")
 
+
 def get_backend(qpu):
-    return Simulator()
+    if qpu.lower() == "local-simulator":
+        return Simulator()
+    elif qpu.lower() == "sycamore" or qpu.lower() == "sycamore23":
+        return Simulator()
+    else:
+        raise NotImplementedError("qpu not supported")
+
 
 def delete_token():
     """Delete account."""
     pass
 
+
 def transpile_for_qpu(qpu, circuit):
-    #TODO: Mapping to device specific QBITS
-    if qpu.lower() == "sycamore" or qpu.lower() == "sycamore23":
-        return cirq_google.optimized_for_sycamore(circuit)
-    elif qpu.lower() == "bristlecone" or qpu.lower() == "foxtail":
-        return cirq_google.optimized_for_xmon(circuit)
+    # TODO: Mapping to device specific QBITS
+    if qpu.lower() == "local-simulator":
+        return circuit
     else:
-        raise NotImplementedError("qpu not supported")
+        device = get_qpu_spec(qpu)
+        return cirq.optimize_for_target_gateset(circuit, gateset=device.metadata.compilation_target_gatesets[0])
 
 
 def execute_job(transpiled_circuit, shots, backend):

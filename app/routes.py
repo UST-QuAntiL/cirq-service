@@ -53,14 +53,16 @@ blp = Blueprint(
 def transpile_circuit(json: TranspilationRequest):
     """Get implementation from URL. Pass input into implementation. Generate and transpile circuit
     and return depth and width."""
-
     if not json:
         abort(400)
+
+    app.logger.info("The input is:" + str(json))
 
     qpu_name = json.get('qpu_name')
     impl_language = json.get('impl_language', '')
     input_params = json.get('input_params', "")
     impl_url = json.get('impl_url', "")
+    impl_data = json.get('impl_data', "")
     bearer_token = json.get("bearer_token", "")
     app.logger.info("The input params are:" + str(input_params))
     if input_params != "":
@@ -86,8 +88,8 @@ def transpile_circuit(json: TranspilationRequest):
             except ValueError:
                 abort(400)
 
-    elif 'impl-data' in json:
-        impl_data = base64.b64decode(json.get('impl_data').encode()).decode()
+    elif impl_data:
+        impl_data = base64.b64decode(impl_data.encode()).decode()
 
         short_impl_name = 'no short name'
         if impl_language.lower() == 'cirq-json':

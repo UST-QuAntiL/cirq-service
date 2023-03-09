@@ -29,7 +29,7 @@ class Config(object):
     REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:5040'
 
     API_TITLE = "Cirq Service API"
-    API_VERSION = "0.1"
+    API_VERSION = "1.0"
     OPENAPI_VERSION = "3.0.2"
     OPENAPI_URL_PREFIX = "/api"
     OPENAPI_SWAGGER_UI_PATH = "/swagger-ui"

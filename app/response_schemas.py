@@ -53,13 +53,13 @@ class ResultResponse:
 
 class TranspilationResponseSchema(ma.Schema):
     depth = ma.fields.Integer()
-    multi_qubit_gate_depth = ma.fields.Integer()
+    multi_qubit_gate_depth = ma.fields.Integer(data_key="multi-qubit-gate-depth")
     width = ma.fields.Integer()
-    total_number_of_operations = ma.fields.Integer()
-    number_of_single_qubit_gates = ma.fields.Integer()
-    number_of_multi_qubit_gates = ma.fields.Integer()
-    number_of_measurements_operations = ma.fields.Integer()
-    transpiled_cirq_json = ma.fields.String()
+    total_number_of_operations = ma.fields.Integer(data_key="total-number-of-operations")
+    number_of_single_qubit_gates = ma.fields.Integer(data_key="number-of-single-qubit-gates")
+    number_of_multi_qubit_gates = ma.fields.Integer(data_key="number-of-multi-qubit-gates")
+    number_of_measurement_operations = ma.fields.Integer(data_key="number-of-measurement-operations")
+    transpiled_cirq_json = ma.fields.String(data_key="transpiled-cirq-json")
 
 
 class ExecutionResponseSchema(ma.Schema):
